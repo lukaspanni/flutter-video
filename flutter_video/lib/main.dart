@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_video/videoCapture.dart';
+import 'package:flutter_video/videoPlayer.dart';
 
 late List<CameraDescription> cameras;
 
@@ -41,20 +44,11 @@ class VideoContainer extends StatefulWidget {
 
 class _VideoContainerState extends State<VideoContainer> {
   String msg = "";
-  late CameraController cameraController;
+  XFile? videoFile;
 
   @override
   void initState() {
     super.initState();
-    cameraController = CameraController(cameras[0], ResolutionPreset.medium);
-    cameraController.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {});
-    }).catchError((Object e) {
-      print(e);
-    });
   }
 
   @override
@@ -68,16 +62,10 @@ class _VideoContainerState extends State<VideoContainer> {
           ),
           ElevatedButton(
             child: Text('Capture Video'),
-            onPressed: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => VideoCapture(cameras: cameras)));
-              setState(() {
-                msg = "Video captured";
-              });
-            },
-          )
+            onPressed: () => _navigateToVideoCapture(context),
+          ),
+          if (videoFile != null)
+            VideoPlayerScreen(videoFile: File(videoFile!.path)),
         ],
       ),
     );
@@ -85,7 +73,22 @@ class _VideoContainerState extends State<VideoContainer> {
 
   @override
   void dispose() {
-    cameraController.dispose();
     super.dispose();
+  }
+
+  Future<void> _navigateToVideoCapture(BuildContext context) async {
+    final XFile result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => VideoCapture(cameras: cameras)));
+    if (!mounted) return;
+
+    final message = "Video captured ${result.path}";
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+    setState(() {
+      msg = message;
+      videoFile = result;
+    });
   }
 }

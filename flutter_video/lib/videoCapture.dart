@@ -15,8 +15,9 @@ class _VideoCaptureState extends State<VideoCapture> {
   @override
   void initState() {
     super.initState();
+    //Controllable resolution Preset!
     cameraController =
-        CameraController(widget.cameras[0], ResolutionPreset.medium);
+        CameraController(widget.cameras[0], ResolutionPreset.max);
     cameraController.initialize().then((_) {
       if (!mounted) {
         return;
@@ -39,6 +40,40 @@ class _VideoCaptureState extends State<VideoCapture> {
       return Container();
     }
 
-    return CameraPreview(cameraController);
+    return Center(
+        child: Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Expanded(
+          child: CameraPreview(cameraController),
+        ),
+        ElevatedButton(
+          child: Text(!cameraController.value.isRecordingVideo
+              ? 'Capture Video'
+              : 'Stop Recording'),
+          onPressed: () => _handleClick(context),
+        ),
+      ],
+    ));
+  }
+
+  Future<void> _handleClick(BuildContext context) async {
+    if (!cameraController.value.isRecordingVideo) {
+      try {
+        await cameraController.startVideoRecording();
+        setState(() => {}); // force text update
+      } catch (e) {
+        print(e);
+      }
+    } else {
+      try {
+        final XFile result = await cameraController.stopVideoRecording();
+        setState(() => {}); // force text updater
+        if (!mounted) return;
+        Navigator.pop(context, result);
+      } catch (e) {
+        print(e);
+      }
+    }
   }
 }
