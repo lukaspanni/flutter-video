@@ -53,10 +53,12 @@ class _VideoContainerState extends State<VideoContainer> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return SingleChildScrollView(
+        child: Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          Text('Cameras ${cameras}'),
           Text(
             msg,
           ),
@@ -68,7 +70,7 @@ class _VideoContainerState extends State<VideoContainer> {
             VideoPlayerScreen(videoFile: File(videoFile!.path)),
         ],
       ),
-    );
+    ));
   }
 
   @override

@@ -10,22 +10,14 @@ class VideoCapture extends StatefulWidget {
 }
 
 class _VideoCaptureState extends State<VideoCapture> {
+  int cameraIndex = 0;
   late CameraController cameraController;
+  late Future<void> initializeCameraControllerFuture;
 
   @override
   void initState() {
     super.initState();
-    //Controllable resolution Preset!
-    cameraController =
-        CameraController(widget.cameras[0], ResolutionPreset.max);
-    cameraController.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {});
-    }).catchError((Object e) {
-      print(e);
-    });
+    _initializeCamera(widget.cameras[0]);
   }
 
   @override
@@ -36,25 +28,41 @@ class _VideoCaptureState extends State<VideoCapture> {
 
   @override
   Widget build(BuildContext context) {
-    if (!cameraController.value.isInitialized) {
-      return Container();
-    }
-
-    return Center(
-        child: Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Expanded(
-          child: CameraPreview(cameraController),
-        ),
-        ElevatedButton(
-          child: Text(!cameraController.value.isRecordingVideo
-              ? 'Capture Video'
-              : 'Stop Recording'),
-          onPressed: () => _handleClick(context),
-        ),
-      ],
-    ));
+    return FutureBuilder(
+        future: initializeCameraControllerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Scaffold(
+                backgroundColor: Colors.black,
+                body: Center(
+                    child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: CameraPreview(cameraController),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          child: Text(!cameraController.value.isRecordingVideo
+                              ? 'Capture Video'
+                              : 'Stop Recording'),
+                          onPressed: () => _handleClick(context),
+                        ),
+                        Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ElevatedButton(
+                                onPressed: changeCamera,
+                                child: const Icon(Icons.change_circle))),
+                      ],
+                    )
+                  ],
+                )));
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        });
   }
 
   Future<void> _handleClick(BuildContext context) async {
@@ -75,5 +83,37 @@ class _VideoCaptureState extends State<VideoCapture> {
         print(e);
       }
     }
+  }
+
+  void changeCamera() {
+    cameraIndex = (cameraIndex + 1) % widget.cameras.length;
+    print(cameraIndex);
+    _initializeCamera(widget.cameras[cameraIndex]);
+  }
+
+  void _initializeCamera(CameraDescription camera) {
+    cameraController = CameraController(camera, ResolutionPreset.max);
+    initializeCameraControllerFuture = cameraController
+        .initialize()
+        .then((_) => setState(() {}))
+        .catchError((e) => print(e));
+  }
+
+  void test() {
+    //possible settings
+    // cameraController.setExposureMode()
+    // cameraController.setExposureOffset()
+    // cameraController.setExposurePoint()
+    // cameraController.setFlashMode(mode)
+    // cameraController.setFocusMode(mode)
+    // cameraController.setFocusPoint(point)
+    // cameraController.setZoomLevel(level)
+
+    //also resolution presets
+    ResolutionPreset.low; // 320x240 (Android) 352x288 (iOS)
+    ResolutionPreset.medium; // 720x480 (Android) 640x480 (iOS)
+    ResolutionPreset.high; // 1280x720
+    ResolutionPreset.veryHigh; // 1920x1080
+    ResolutionPreset.ultraHigh; // 3840x2160
   }
 }
