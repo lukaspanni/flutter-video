@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   camera: ">=0.10.0"
   video_player:
+  path_provider:
 
 dev_dependencies:
   flutter_test:

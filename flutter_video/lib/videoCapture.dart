@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
@@ -76,13 +78,19 @@ class _VideoCaptureState extends State<VideoCapture> {
     } else {
       try {
         final XFile result = await cameraController.stopVideoRecording();
-        setState(() => {}); // force text updater
+        setState(() => {}); // force text update
+        await storeVideo(result);
         if (!mounted) return;
         Navigator.pop(context, result);
       } catch (e) {
         print(e);
       }
     }
+  }
+
+  Future<void> storeVideo(XFile video) async {
+    video.saveTo(await buildPlatformSpecificPath(video));
+    print('Video saved to ${video.path}');
   }
 
   void changeCamera() {
@@ -115,5 +123,20 @@ class _VideoCaptureState extends State<VideoCapture> {
     ResolutionPreset.high; // 1280x720
     ResolutionPreset.veryHigh; // 1920x1080
     ResolutionPreset.ultraHigh; // 3840x2160
+  }
+
+  Future<String> buildPlatformSpecificPath(XFile video) async {
+    String baseFolder = '';
+
+    if (!Platform.isAndroid) {
+      baseFolder = (await getApplicationDocumentsDirectory()).path;
+    } else {
+      baseFolder = '/storage/emulated/0/Documents';
+    }
+    String videoFolder = '$baseFolder/crossVideo';
+
+    Directory dir = Directory(videoFolder);
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return '$videoFolder/${video.name}';
   }
 }
