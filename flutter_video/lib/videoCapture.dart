@@ -4,14 +4,17 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 class VideoCapture extends StatefulWidget {
-  final List<CameraDescription> cameras;
-  const VideoCapture({Key? key, required this.cameras}) : super(key: key);
+  bool runTest;
+  static int recordingTime = 10000;
+  VideoCapture({Key? key, this.runTest = false}) : super(key: key);
 
   @override
   State<VideoCapture> createState() => _VideoCaptureState();
 }
 
 class _VideoCaptureState extends State<VideoCapture> {
+  List<CameraDescription>? cameras;
+
   int cameraIndex = 0;
   late CameraController cameraController;
   late Future<void> initializeCameraControllerFuture;
@@ -19,7 +22,8 @@ class _VideoCaptureState extends State<VideoCapture> {
   @override
   void initState() {
     super.initState();
-    _initializeCamera(widget.cameras[0]);
+    WidgetsFlutterBinding.ensureInitialized();
+    initializeCameraControllerFuture = _initializeCamera();
   }
 
   @override
@@ -33,6 +37,9 @@ class _VideoCaptureState extends State<VideoCapture> {
     return FutureBuilder(
         future: initializeCameraControllerFuture,
         builder: (context, snapshot) {
+          if (widget.runTest) {
+            runTest(context);
+          }
           if (snapshot.connectionState == ConnectionState.done) {
             return Scaffold(
                 backgroundColor: Colors.black,
@@ -94,17 +101,21 @@ class _VideoCaptureState extends State<VideoCapture> {
   }
 
   void changeCamera() {
-    cameraIndex = (cameraIndex + 1) % widget.cameras.length;
+    if (cameras == null) return;
+    // just allow to iterate through all cameras
+    cameraIndex = (cameraIndex + 1) % cameras!.length;
     print(cameraIndex);
-    _initializeCamera(widget.cameras[cameraIndex]);
+    _initializeCamera();
   }
 
-  void _initializeCamera(CameraDescription camera) {
-    cameraController = CameraController(camera, ResolutionPreset.max);
-    initializeCameraControllerFuture = cameraController
-        .initialize()
-        .then((_) => setState(() {}))
-        .catchError((e) => print(e));
+  Future<void> _initializeCamera() async {
+    cameras ??= await availableCameras();
+
+    cameraController =
+        CameraController(cameras![cameraIndex], ResolutionPreset.max);
+    await cameraController.initialize().catchError((e) => print(e));
+
+    setState(() {});
   }
 
   void test() {
@@ -138,5 +149,15 @@ class _VideoCaptureState extends State<VideoCapture> {
     Directory dir = Directory(videoFolder);
     if (!await dir.exists()) await dir.create(recursive: true);
     return '$videoFolder/${video.name}';
+  }
+
+  Future<void> runTest(BuildContext context) async {
+    widget.runTest = false;
+    await initializeCameraControllerFuture;
+    if (!mounted) return;
+    await _handleClick(context);
+    await Future.delayed(Duration(milliseconds: VideoCapture.recordingTime));
+    if (!mounted) return;
+    await _handleClick(context);
   }
 }

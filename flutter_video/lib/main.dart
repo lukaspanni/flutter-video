@@ -5,14 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter_video/videoCapture.dart';
 import 'package:flutter_video/videoPlayer.dart';
 
-late List<CameraDescription> cameras;
-
 Future<void> main() async {
-  // wait for initialization before accessing cameras
-  WidgetsFlutterBinding.ensureInitialized();
-  cameras = await availableCameras();
-  print(cameras);
-
   runApp(const MyApp());
 }
 
@@ -58,13 +51,16 @@ class _VideoContainerState extends State<VideoContainer> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Text('Cameras ${cameras}'),
           Text(
             msg,
           ),
           ElevatedButton(
-            child: Text('Capture Video'),
+            child: const Text('Capture Video'),
             onPressed: () => _navigateToVideoCapture(context),
+          ),
+          ElevatedButton(
+            child: const Text('Run Test'),
+            onPressed: () => _runTest(context),
           ),
           if (videoFile != null)
             VideoPlayerScreen(videoFile: File(videoFile!.path)),
@@ -80,12 +76,26 @@ class _VideoContainerState extends State<VideoContainer> {
 
   Future<void> _navigateToVideoCapture(BuildContext context) async {
     final XFile result = await Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => VideoCapture(cameras: cameras)));
+        context, MaterialPageRoute(builder: (context) => VideoCapture()));
     if (!mounted) return;
 
     final message = "Video captured ${result.path}";
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+    setState(() {
+      msg = message;
+      videoFile = result;
+    });
+  }
+
+  Future<void> _runTest(BuildContext context) async {
+    Stopwatch watch = Stopwatch()..start();
+    final XFile result = await Navigator.push(context,
+        MaterialPageRoute(builder: (context) => VideoCapture(runTest: true)));
+    if (!mounted) return;
+
+    final message =
+        "Test took ${watch.elapsedMilliseconds} ms which is ${watch.elapsedMilliseconds - VideoCapture.recordingTime} ms more than the targetCaptureTime of ${VideoCapture.recordingTime} ms";
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
     setState(() {
