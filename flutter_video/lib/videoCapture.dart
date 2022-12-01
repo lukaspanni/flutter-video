@@ -16,7 +16,7 @@ class _VideoCaptureState extends State<VideoCapture> {
   List<CameraDescription>? cameras;
 
   int cameraIndex = 0;
-  late CameraController cameraController;
+  CameraController? cameraController;
   late Future<void> initializeCameraControllerFuture;
 
   @override
@@ -28,7 +28,7 @@ class _VideoCaptureState extends State<VideoCapture> {
 
   @override
   void dispose() {
-    cameraController.dispose();
+    cameraController?.dispose();
     super.dispose();
   }
 
@@ -48,13 +48,13 @@ class _VideoCaptureState extends State<VideoCapture> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Expanded(
-                      child: CameraPreview(cameraController),
+                      child: CameraPreview(cameraController!),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
-                          child: Text(!cameraController.value.isRecordingVideo
+                          child: Text(!cameraController!.value.isRecordingVideo
                               ? 'Capture Video'
                               : 'Stop Recording'),
                           onPressed: () => _handleClick(context),
@@ -75,16 +75,16 @@ class _VideoCaptureState extends State<VideoCapture> {
   }
 
   Future<void> _handleClick(BuildContext context) async {
-    if (!cameraController.value.isRecordingVideo) {
+    if (!cameraController!.value.isRecordingVideo) {
       try {
-        await cameraController.startVideoRecording();
+        await cameraController!.startVideoRecording();
         setState(() => {}); // force text update
       } catch (e) {
         print(e);
       }
     } else {
       try {
-        final XFile result = await cameraController.stopVideoRecording();
+        final XFile result = await cameraController!.stopVideoRecording();
         setState(() => {}); // force text update
         await storeVideo(result);
         if (!mounted) return;
@@ -111,9 +111,9 @@ class _VideoCaptureState extends State<VideoCapture> {
   Future<void> _initializeCamera() async {
     cameras ??= await availableCameras();
 
-    cameraController =
+    cameraController ??=
         CameraController(cameras![cameraIndex], ResolutionPreset.max);
-    await cameraController.initialize().catchError((e) => print(e));
+    await cameraController?.initialize().catchError((e) => print(e));
 
     setState(() {});
   }

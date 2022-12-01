@@ -75,6 +75,7 @@ class _VideoContainerState extends State<VideoContainer> {
   }
 
   Future<void> _navigateToVideoCapture(BuildContext context) async {
+    reset();
     final XFile result = await Navigator.push(
         context, MaterialPageRoute(builder: (context) => VideoCapture()));
     if (!mounted) return;
@@ -89,6 +90,7 @@ class _VideoContainerState extends State<VideoContainer> {
   }
 
   Future<void> _runTest(BuildContext context) async {
+    reset();
     Stopwatch watch = Stopwatch()..start();
     final XFile result = await Navigator.push(context,
         MaterialPageRoute(builder: (context) => VideoCapture(runTest: true)));
@@ -101,6 +103,13 @@ class _VideoContainerState extends State<VideoContainer> {
     setState(() {
       msg = message;
       videoFile = result;
+    });
+  }
+
+  void reset() {
+    setState(() {
+      msg = "";
+      videoFile = null;
     });
   }
 }
